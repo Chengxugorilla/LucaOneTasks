@@ -56,17 +56,18 @@ def create_activate(activate_func):
         return nn.Tanh()
 
 
-def create_loss_function(config,
-                         args,
-                         hidden_size,
-                         classifier_size,
-                         sigmoid,
-                         output_mode,
-                         num_labels,
-                         loss_type,
-                         ignore_index=-100,
-                         return_types=["dropout", "hidden_layer", "hidden_act", "classifier", "output", "loss"]
-                         ):
+def create_loss_function(
+        config,
+        args,
+        hidden_size,
+        classifier_size,
+        sigmoid,
+        output_mode,
+        num_labels,
+        loss_type,
+        ignore_index=-100,
+        return_types=["dropout", "hidden_layer", "hidden_act", "classifier", "output", "loss"]
+):
     '''
     create the output layer and loss layer
     :param hidden_size:
@@ -85,6 +86,8 @@ def create_loss_function(config,
     if "dropout" in return_types:
         if hasattr(config, "classifier_dropout_prob"):
             dropout = nn.Dropout(config.classifier_dropout_prob)
+        elif hasattr(config, "classifier_dropout"):
+            dropout = nn.Dropout(config.classifier_dropout)
         elif hasattr(config, "dropout_prob"):
             dropout = nn.Dropout(config.dropout_prob)
         else:
@@ -192,15 +195,14 @@ def create_loss_function(config,
             if loss_type == "bce":
                 if pos_weight:
                     # [0.9]
-                    if isinstance(pos_weight, int) or isinstance(pos_weight, str):
+                    if isinstance(pos_weight, str) or isinstance(pos_weight, int):
                         pos_weight = torch.tensor([float(pos_weight)], dtype=torch.float32).to(args.device)
                     elif isinstance(pos_weight, float):
                         pos_weight = torch.tensor([pos_weight], dtype=torch.float32).to(args.device)
                     print("binary_class pos_weight:")
                     print(pos_weight)
                     assert pos_weight.ndim == 1 and pos_weight.shape[0] == 1
-                    loss_fct = MaskedBCEWithLogitsLoss(pos_weight=pos_weight, reduction=reduction,
-                                                       ignore_nans=True, ignore_value=ignore_index)
+                    loss_fct = MaskedBCEWithLogitsLoss(pos_weight=pos_weight, reduction=reduction, ignore_nans=True, ignore_value=ignore_index)
                 else:
                     loss_fct = MaskedBCEWithLogitsLoss(reduction=reduction, ignore_nans=True, ignore_value=ignore_index)
             elif loss_type == "focal_loss":
